@@ -1,3 +1,10 @@
+- name: Check
+  shell:
+    cmd: "cd /opt/{{ upgrade_package }}&&./upgrade_by_file_list filelist.yaml check&&cd -"
+    executable: /bin/sh
+  register: pid_result #将命令结果注册为变量pid_result，以便后续步骤使用。
+  ignore_errors: no #检查有错误时，停止升级。
+
 - name: Stop services
   systemd:
     name: "{{ item }}"
@@ -7,14 +14,14 @@
   #until: stop_services_result is succeeded
 
 - name: Find the PID of the process to terminate
-  ansible.builtin.shell:
+  shell:
     cmd: "pgrep -f 'scripts/check.sh'"
     executable: /bin/sh
   register: pid_result #将命令结果注册为变量pid_result，以便后续步骤使用。
   ignore_errors: yes #忽略错误，以防进程不存在或权限问题。
 
 - name: Terminate the found process
-  ansible.builtin.shell:
+  shell:
     cmd: "kill -9 {{ item }}"
     executable: /bin/sh
   loop: "{{ pid_result.stdout_lines }}"
@@ -39,8 +46,8 @@
 #    msg: "Failed to stop waf services"
 #  when: stop_waf_result.stdout_lines | length == 0
 - name: Upgrade
-  ansible.builtin.shell:
-    cmd: "cd /opt/yaml_data&&./upgrade_by_file_list filelist.yaml check&&cd -"
+  shell:
+    cmd: "cd /opt/{{ upgrade_package }}&&./upgrade_by_file_list filelist.yaml upgrade&&cd -"
     executable: /bin/sh
   register: pid_result #将命令结果注册为变量pid_result，以便后续步骤使用。
   ignore_errors: yes #忽略错误，以防进程不存在或权限问题。

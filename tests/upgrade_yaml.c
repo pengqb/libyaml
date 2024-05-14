@@ -94,7 +94,7 @@ void upgrade_file(FileItem *item, const char *upgrade_path, const char *waf_path
     if (item->action & ACTION_ADD) {
         int status;
         char cmdstr[2 * PATH_MAX + 10] = {0};/* 冗余2byte */
-        int len = snprintf(cmdstr, 2 * PATH_MAX + 10, "cp -fr %s %s", upgrade_path, waf_path);
+        snprintf(cmdstr, 2 * PATH_MAX + 10, "cp -fr %s %s", upgrade_path, waf_path);
         status = system(cmdstr);
         if (status < 0) {
             fprintf(stderr, "Failed to shell: %s. strerror:%s\n", cmdstr, strerror(errno));

@@ -5,14 +5,10 @@
   hosts: tag1
   serial: 2
   gather_facts: no
-  vars:
-    old_version: v1
-    new_version: v2
-    upgrade_package: yaml_data_{{ new_version }}
-    upgrade_sequence: 
-      - waf1
-      - waf2
-    process_name: check.sh
+#  vars:
+#    old_version: v1
+#    new_version: v2
+#    upgrade_package: yaml_data_{{ new_version }}
 
   tasks:
   - name: Transfer upgrade package
