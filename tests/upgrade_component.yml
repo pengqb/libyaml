@@ -1,0 +1,72 @@
+- name: Stop services
+  systemd:
+    name: "{{ item }}"
+    state: stopped
+  with_items: "{{ services }}"
+  #register: stop_services_result
+  #until: stop_services_result is succeeded
+
+- name: Find the PID of the process to terminate
+  ansible.builtin.shell:
+    cmd: "pgrep -f 'scripts/check.sh'"
+    executable: /bin/sh
+  register: pid_result #将命令结果注册为变量pid_result，以便后续步骤使用。
+  ignore_errors: yes #忽略错误，以防进程不存在或权限问题。
+
+- name: Terminate the found process
+  ansible.builtin.shell:
+    cmd: "kill -9 {{ item }}"
+    executable: /bin/sh
+  loop: "{{ pid_result.stdout_lines }}"
+  when: pid_result.stdout_lines | length > 0
+  ignore_errors: yes
+  
+- name: Stop waf services
+  shell: service {{ item }} stop
+  register: stop_waf_result
+  ignore_errors: yes
+  with_items: "{{ waf_services }}"
+
+#- name: Wait for waf services to stop
+#  debug:
+#    var: stop_waf_result.stdout_lines
+#  until: stop_waf_result.stdout_lines is defined and stop_waf_result.stdout_lines | length > 0
+#  retries: 2
+#  delay: 5
+#
+#- name: Handle waf services stop failure
+#  fail:
+#    msg: "Failed to stop waf services"
+#  when: stop_waf_result.stdout_lines | length == 0
+- name: Upgrade
+  ansible.builtin.shell:
+    cmd: "cd /opt/yaml_data&&./upgrade_by_file_list filelist.yaml check&&cd -"
+    executable: /bin/sh
+  register: pid_result #将命令结果注册为变量pid_result，以便后续步骤使用。
+  ignore_errors: yes #忽略错误，以防进程不存在或权限问题。
+
+- name: Start waf services
+  shell: service {{ item }} start
+  register: start_waf_result
+  with_items: "{{ waf_services }}"
+  ignore_errors: yes
+
+#- name: Wait for waf services to start
+#  debug:
+#    var: start_waf_result.stdout_lines
+#  until: start_waf_result.stdout_lines is defined and start_waf_result.stdout_lines | length > 0
+#  retries: 2
+#  delay: 10
+#
+#- name: Handle waf services stop failure
+#  fail:
+#    msg: "Failed to stop waf services"
+#  when: start_waf_result.stdout_lines | length == 0
+
+- name: Start services
+  systemd:
+    name: "{{ item }}"
+    state: started
+  with_items: "{{ services }}"
+  #register: stop_services_result
+  #until: stop_services_result is succeeded

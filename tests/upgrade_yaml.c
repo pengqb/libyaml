@@ -29,20 +29,21 @@
 #define PATH_MAX 256
 #define ITEM_MAX 128
 
-#define UPGRADE_BASE "/Users/pengqiangbing/work/opensource/yaml_data/upgrade/"
-#define WAF_BASE "/Users/pengqiangbing/work/opensource/yaml_data/waf/"
-#define BAK_BASE "/Users/pengqiangbing/work/opensource/yaml_data/bak/"
-
-//#define UPGRADE_BASE "./upgrade/"
-//#define WAF_BASE "/waf/"
-//#define BAK_BASE "./bak/"
+#define UPGRADE_BASE "upgrade/"
+#define WAF_BASE "waf/"
+#define BAK_BASE "bak/"
 
 // 定义与YAML中结构对应的C结构体
 typedef struct FileItem {
-    const char *relative_path;
+    char *relative_path;
     int chmod;
     int action;
 } FileItem;
+
+//typedef struct FileItemList {
+//    FileItem item;
+//    struct FileItemList *next;
+//} FileItemList;
 
 void free_file_item(FileItem item) {
     FREE_SAFE(item.relative_path);
@@ -173,6 +174,7 @@ void parse_yaml_mapping(yaml_parser_t *parser, FileItem *item) {
 
 // 读取并解析YAML文件
 void process_yaml_file(const char *filename, char *task) {
+    size_t i;
     FILE *input = fopen(filename, "rb");
     if (!input) {
         fprintf(stderr, "Failed to open file\n");
@@ -221,7 +223,7 @@ void process_yaml_file(const char *filename, char *task) {
     fclose(input);
 
     // 打印解析后的数据
-    for (size_t i = 0; i < item_count; i++) {
+    for (i = 0; i < item_count; i++) {
         printf("Relative Path: %s\n", items[i].relative_path);
         printf("Chmod Permissions: %d\n", items[i].chmod);
         printf("Action: %d\n", items[i].action);
@@ -257,7 +259,7 @@ void process_yaml_file(const char *filename, char *task) {
         }
     }
 
-    for (size_t i = 0; i < item_count; i++) {
+    for (i = 0; i < item_count; i++) {
         free_file_item(items[i]);
     }
 }

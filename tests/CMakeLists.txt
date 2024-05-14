@@ -15,6 +15,7 @@ foreach(name IN ITEMS
   run-loader
   run-parser
   run-parser-test-suite
+  upgrade_yaml
   run-scanner
   test-reader
   test-version

@@ -1,0 +1,55 @@
+---
+# 文件名：upgrade_servers.yml
+
+- name: Server Batch Upgrade
+  hosts: tag1
+  serial: 2
+  gather_facts: no
+  vars:
+    old_version: v1
+    new_version: v2
+    upgrade_package: yaml_data_{{ new_version }}
+    upgrade_sequence: 
+      - waf1
+      - waf2
+    process_name: check.sh
+
+  tasks:
+  - name: Transfer upgrade package
+    copy:
+      src: "{{ upgrade_package }}.tar.gz"
+      dest: /opt/{{ upgrade_package }}.tar.gz
+      owner: root
+      group: root
+      mode: 0755
+  - name: Unarchive the upgrade package
+    unarchive:
+      src: /opt/{{ upgrade_package }}.tar.gz
+      dest: /opt/
+      remote_src: yes #远程文件路径
+      creates: /opt/{{ upgrade_package }} #当指定目录不存在时，ansible才执行解压操作
+
+- name: Tasks Execution on waf1
+  hosts: waf1
+  gather_facts: no
+  vars:
+    services:
+      - crond
+    waf_services:
+      - waf-sync
+      - waf
+  tasks:
+    - include_tasks: upgrade_component.yml
+
+- name: Tasks Execution on waf2
+  hosts: waf2
+  gather_facts: no
+  vars:
+    services:
+      - crond
+    waf_services:
+      - waf-sync
+      - waf
+  tasks:
+    - include_tasks: upgrade_component.yml
+
