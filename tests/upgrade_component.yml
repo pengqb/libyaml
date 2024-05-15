@@ -2,8 +2,8 @@
   shell:
     cmd: "cd /opt/{{ upgrade_package }}&&./upgrade_by_file_list filelist.yaml check&&cd -"
     executable: /bin/sh
-  register: pid_result #将命令结果注册为变量pid_result，以便后续步骤使用。
-  ignore_errors: no #检查有错误时，停止升级。
+  register: check_result
+  ignore_errors: no
 
 - name: Stop services
   systemd:
@@ -17,8 +17,8 @@
   shell:
     cmd: "pgrep -f 'scripts/check.sh'"
     executable: /bin/sh
-  register: pid_result #将命令结果注册为变量pid_result，以便后续步骤使用。
-  ignore_errors: yes #忽略错误，以防进程不存在或权限问题。
+  register: pid_result
+  ignore_errors: yes
 
 - name: Terminate the found process
   shell:
@@ -49,8 +49,8 @@
   shell:
     cmd: "cd /opt/{{ upgrade_package }}&&./upgrade_by_file_list filelist.yaml upgrade&&cd -"
     executable: /bin/sh
-  register: pid_result #将命令结果注册为变量pid_result，以便后续步骤使用。
-  ignore_errors: yes #忽略错误，以防进程不存在或权限问题。
+  register: upgrade_result
+  ignore_errors: yes
 
 - name: Start waf services
   shell: service {{ item }} start

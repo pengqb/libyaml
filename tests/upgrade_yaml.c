@@ -197,19 +197,19 @@ int safe_snprintf(char *path, char *base_path, char *relative_pateh) {
 }
 
 // 读取并解析YAML文件
-void process_yaml_file(const char *filename, char *task) {
-    size_t i;
+int process_yaml_file(const char *filename, char *task) {
+    size_t i, res = 0;
     FILE *input = fopen(filename, "rb");
     if (!input) {
         fprintf(stderr, "Failed to open file\n");
-        return;
+        return -1;
     }
 
     yaml_parser_t parser;
     if (!yaml_parser_initialize(&parser)) {
         fprintf(stderr, "Failed to initialize parser\n");
         fclose(input);
-        return;
+        return -1;
     }
     yaml_parser_set_input_file(&parser, input);
 
@@ -253,15 +253,18 @@ void process_yaml_file(const char *filename, char *task) {
 
         char bak_path[PATH_MAX] = {0};
         if (safe_snprintf(bak_path, BAK_BASE, items[i].relative_path) == -1) {
-            return;
+            res = -1;
+            break;
         }
         char waf_path[PATH_MAX] = {0};
         if (safe_snprintf(waf_path, WAF_BASE, items[i].relative_path) == -1) {
-            return;
+            res = -1;
+            break;
         }
         char upgrade_path[PATH_MAX] = {0};
         if (safe_snprintf(upgrade_path, UPGRADE_BASE, items[i].relative_path) == -1) {
-            return;
+            res = -1;
+            break;
         }
 
         if (strncmp(task, TASK_UPGRADE, strlen(TASK_UPGRADE)) == 0) {
@@ -274,20 +277,22 @@ void process_yaml_file(const char *filename, char *task) {
             printf("ok\n");
         } else {
             fprintf(stderr, "unknown task:%s\n", task);
+            res = -1;
+            break;
         }
     }
 
     for (i = 0; i < item_count; i++) {
         free_file_item(items[i]);
     }
+    return res;
 }
 
 int main(int argc, char *argv[]) {
 
     if (argc < 3) {
         fprintf(stderr, "Usage: %s file.yaml check/upgrade/rollback...\n", argv[0]);
-        return 0;
+        return -1;
     }
-    process_yaml_file(argv[1], argv[2]);
-    return 0;
+    return process_yaml_file(argv[1], argv[2]);
 }
