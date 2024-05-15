@@ -1,16 +1,27 @@
 ---
 # 文件名：upgrade_servers.yml
 
+- name: Check project version
+  hosts: tag1
+  gather_facts: no
+
+  tasks:
+    - name: Check project version
+      command: awk 'END{print}' /waf/doc/VERSION
+      register: version_result
+      changed_when: false
+      ignore_errors: true
+
+    - name: Compare version and decide to continue
+      fail:
+        msg: "Version does not meet requirements, exiting."
+      when: version_result.stdout != old_version
+
 - name: Server Batch Upgrade
   hosts: tag1
   serial: 2
   gather_facts: no
-#  vars:
-#    old_version: v1
-#    new_version: v2
-#    upgrade_package: yaml_data_{{ new_version }}
 
-  tasks:
   - name: Transfer upgrade package
     copy:
       src: "{{ upgrade_package }}.tar.gz"
@@ -48,4 +59,3 @@
       - waf
   tasks:
     - include_tasks: upgrade_component.yml
-

@@ -15,7 +15,7 @@
 ## 192.168.100.1
 ## 192.168.100.10
 [all:vars]
-old_version=v1
+old_version=v3.0.11.1.2023103001
 new_version=v2
 upgrade_package=yaml_data_{{ new_version }}
 

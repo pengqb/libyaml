@@ -15,7 +15,7 @@
 #define FREE_SAFE(p) do{ if(p){free(p);p=NULL;} }while(0)
 
 #define ACTION_ADD 1
-#define ACTION_DEL (1 << 1)
+#define ACTION_DEL 1 << 1
 #define ACTION_MODIFY (ACTION_ADD | ACTION_DEL)
 
 #define ACTION_ADD_STR "add"
@@ -30,7 +30,7 @@
 #define ITEM_MAX 128
 
 #define UPGRADE_BASE "upgrade/"
-#define WAF_BASE "/waf/"
+#define WAF_BASE "waf/"
 #define BAK_BASE "bak/"
 
 // 定义与YAML中结构对应的C结构体
@@ -40,6 +40,11 @@ typedef struct FileItem {
     int action;
 } FileItem;
 
+//typedef struct FileItemList {
+//    FileItem item;
+//    struct FileItemList *next;
+//} FileItemList;
+
 void free_file_item(FileItem item) {
     FREE_SAFE(item.relative_path);
 }
@@ -48,44 +53,26 @@ void parse_yaml_mapping(yaml_parser_t *parser, FileItem *item);
 
 // 函数用来创建多级目录
 int mkdir_p(const char *dir_path) {
-    if (!dir_path) {
-        fprintf(stderr, "Invalid directory path\n");
-        return -1;
-    }
+    char tmp[256];
+    char *p = NULL;
+    size_t len;
 
-    size_t path_len = strlen(dir_path) + 1;
-    char *tmp = malloc(path_len);
-    if (!tmp){
-        fprintf(stderr, "Memory allocation error\n");
-        return -1;
-    }
-    snprintf(tmp, path_len, "%s", dir_path);
-
-    size_t len = strlen(tmp);
+    snprintf(tmp, sizeof(tmp), "%s", dir_path);
+    len = strlen(tmp);
 
     if (tmp[len - 1] == '/') {
         tmp[len - 1] = 0;
     }
 
-    for (char *p = tmp + 1; *p; p++) {
+    for (p = tmp + 1; *p; p++) {
         if (*p == '/') {
             *p = 0;
-            if (mkdir(tmp, S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH) != 0 && errno != EEXIST) {
-                perror("mkdir");
-                free(tmp);
-                return -1;
-            }
+            mkdir(tmp, S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH);
             *p = '/';
         }
     }
 
-    if (mkdir(tmp, S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH) != 0 && errno != EEXIST) {
-        perror("mkdir");
-        free(tmp);
-        return -1;
-    }
-
-    free(tmp);
+    mkdir(tmp, S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH);
     return 0;
 }
 
@@ -105,14 +92,10 @@ void bak_file(FileItem *item, const char *waf_path, const char *bak_path) {
 void upgrade_file(FileItem *item, const char *upgrade_path, const char *waf_path) {
     /*add、modify需要升级*/
     if (item->action & ACTION_ADD) {
+        int status;
         char cmdstr[2 * PATH_MAX + 10] = {0};/* 冗余2byte */
-        int len = snprintf(cmdstr, 2 * PATH_MAX + 10, "cp -fr %s %s", upgrade_path, waf_path);
-        if (len >= 2 * PATH_MAX + 10) {
-            fprintf(stderr, "cp cmd too long:%s...\n", cmdstr);
-            return;
-        }
-
-        int status = system(cmdstr);
+        snprintf(cmdstr, 2 * PATH_MAX + 10, "cp -fr %s %s", upgrade_path, waf_path);
+        status = system(cmdstr);
         if (status < 0) {
             fprintf(stderr, "Failed to shell: %s. strerror:%s\n", cmdstr, strerror(errno));
             return;
@@ -143,9 +126,11 @@ void rollback_file(FileItem *item, const char *waf_path, const char *bak_path) {
     }
 }
 
+
 // 解析单个YAML映射节点
 void parse_yaml_mapping(yaml_parser_t *parser, FileItem *item) {
     yaml_event_t event;
+
     while (1) {
         // 获取下一个事件
         if (!yaml_parser_parse(parser, &event)) {
@@ -155,7 +140,6 @@ void parse_yaml_mapping(yaml_parser_t *parser, FileItem *item) {
 
         // 处理映射内的键值对
         if (event.type == YAML_MAPPING_END_EVENT) {
-            yaml_event_delete(&event);
             break;  // 如果遇到映射结束事件，则退出循环
         } else if (event.type == YAML_SCALAR_EVENT) {
             const char *key = (const char *) event.data.scalar.value;
@@ -180,21 +164,13 @@ void parse_yaml_mapping(yaml_parser_t *parser, FileItem *item) {
                     item->action = ACTION_MODIFY;
                 }
             }
-            yaml_event_delete(&event);
+            yaml_event_delete(&event);  // 删除已处理的值事件
         } else {
-            yaml_event_delete(&event);
+            yaml_event_delete(&event);  // 删除非预期的事件
         }
     }
 }
 
-int safe_snprintf(char *path, char *base_path, char *relative_pateh) {
-    int len = snprintf(path, PATH_MAX, "%s%s", base_path, relative_pateh);
-    if (len >= PATH_MAX - 1) {
-        fprintf(stderr, "path too long:%s%s\n", base_path, relative_pateh);
-        return -1;
-    }
-    return 0;
-}
 
 // 读取并解析YAML文件
 void process_yaml_file(const char *filename, char *task) {
@@ -211,6 +187,7 @@ void process_yaml_file(const char *filename, char *task) {
         fclose(input);
         return;
     }
+
     yaml_parser_set_input_file(&parser, input);
 
     // 初始化FileItem数组，实际应用中可能需要动态分配空间
@@ -247,32 +224,37 @@ void process_yaml_file(const char *filename, char *task) {
 
     // 打印解析后的数据
     for (i = 0; i < item_count; i++) {
-//        printf("Relative Path: %s\n", items[i].relative_path);
-//        printf("Chmod Permissions: %d\n", items[i].chmod);
-//        printf("Action: %d\n", items[i].action);
+        printf("Relative Path: %s\n", items[i].relative_path);
+        printf("Chmod Permissions: %d\n", items[i].chmod);
+        printf("Action: %d\n", items[i].action);
 
         char bak_path[PATH_MAX] = {0};
-        if (safe_snprintf(bak_path, BAK_BASE, items[i].relative_path) == -1) {
+        int len = snprintf(bak_path, PATH_MAX, "%s%s", BAK_BASE, items[i].relative_path);
+        if (len >= PATH_MAX - 1) {
+            fprintf(stderr, "bak_file: path too long:%s%s\n", BAK_BASE, items[i].relative_path);
             return;
         }
         char waf_path[PATH_MAX] = {0};
-        if (safe_snprintf(waf_path, WAF_BASE, items[i].relative_path) == -1) {
+        len = snprintf(waf_path, PATH_MAX, "%s%s", WAF_BASE, items[i].relative_path);
+        if (len >= PATH_MAX - 1) {
+            fprintf(stderr, "waf_file: path too long:%s%s\n", WAF_BASE, items[i].relative_path);
             return;
         }
         char upgrade_path[PATH_MAX] = {0};
-        if (safe_snprintf(upgrade_path, UPGRADE_BASE, items[i].relative_path) == -1) {
+        len = snprintf(upgrade_path, PATH_MAX, "%s%s", UPGRADE_BASE, items[i].relative_path);
+        if (len >= PATH_MAX - 1) {
+            fprintf(stderr, "upgrade_file: path too long:%s%s\n", UPGRADE_BASE, items[i].relative_path);
             return;
         }
 
-        if (strncmp(task, TASK_UPGRADE, strlen(TASK_UPGRADE)) == 0) {
+        if (strncmp(task, TASK_UPGRADE, sizeof(TASK_UPGRADE)) == 0) {
             bak_file(&items[i], waf_path, bak_path);
             upgrade_file(&items[i], upgrade_path, waf_path);
-        } else if (strncmp(task, TASK_ROLLBACK, strlen(TASK_ROLLBACK)) == 0) {
+        }else if (strncmp(task, TASK_ROLLBACK, sizeof(TASK_ROLLBACK)) == 0) {
             rollback_file(&items[i], waf_path, bak_path);
-        } else if (strncmp(task, TASK_CHECK, strlen(TASK_CHECK)) == 0) {
+        }else if (strncmp(task, TASK_CHECK, sizeof(TASK_CHECK)) == 0){
             /*do nothing*/
-            printf("ok\n");
-        } else {
+        }else{
             fprintf(stderr, "unknown task:%s\n", task);
         }
     }

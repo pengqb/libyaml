@@ -6,10 +6,7 @@
   serial: 2
   gather_facts: no
   vars:
-    old_version: v1
-    new_version: v2
-    upgrade_package: yaml_data_{{ new_version }}
-    upgrade_sequence: 
+    upgrade_sequence:
       - waf1
       - waf2
     process_name: check.sh
@@ -29,17 +26,19 @@
 #      dest: /opt/
 #      remote_src: yes #远程文件路径
 #      creates: /opt/{{ upgrade_package }} #当指定目录不存在时，ansible才执行解压操作
-  - name: Find the PID of the process to terminate
+  - name: Check
     shell:
-      cmd: "pgrep -f 'scripts/check.sh'"
+      cmd: "cd /opt/{{ upgrade_package }}&&./upgrade_by_file_list filelist.yaml check&&cd -"
       executable: /bin/sh
     register: pid_result #将命令结果注册为变量pid_result，以便后续步骤使用。
-    ignore_errors: yes #忽略错误，以防进程不存在或权限问题。
+    ignore_errors: no #检查有错误时，停止升级。
 
-  - name: Terminate the found process
-    shell:
-      cmd: "kill -9 {{ item }}"
-      executable: /bin/sh
-    loop: "{{ pid_result.stdout_lines }}"
-    when: pid_result.stdout_lines | length > 0
-    ignore_errors: yes
+#  - name: Compare version and decide to continue
+#    fail:
+#      msg: "Version does not meet requirements, exiting."
+#    when: version_result.stdout != old_version
+
+  # 接下来的tasks只有在版本符合条件时才会执行
+  - name: Continue with other tasks
+    debug:
+      msg: "{{ pid_result.stdout }}"
