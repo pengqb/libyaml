@@ -1,0 +1,22 @@
+---
+# 文件名：filelist.yml
+
+- relative_path: doc/VERSION
+  chmod: 0755
+  action: modify
+- relative_path: doc/changelog.yaml
+  chmod: 0755
+  action: modify
+- relative_path: config/hosts.tmpl
+  chmod: 0755
+  action: modify
+- relative_path: limits.conf
+  waf_base: etc/security/
+  chmod: 0755
+  action: modify
+- relative_path: nginx/sbin/nginx_debug
+  chmod: 0644
+  action: add
+- relative_path: config/genconf.conf.new
+  chmod:
+  action: delete

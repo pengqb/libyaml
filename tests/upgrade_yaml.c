@@ -36,12 +36,14 @@
 // 定义与YAML中结构对应的C结构体
 typedef struct FileItem {
     char *relative_path;
+    char *waf_base;
     int chmod;
     int action;
 } FileItem;
 
 void free_file_item(FileItem item) {
     FREE_SAFE(item.relative_path);
+    FREE_SAFE(item.waf_base);
 }
 
 void parse_yaml_mapping(yaml_parser_t *parser, FileItem *item);
@@ -55,7 +57,7 @@ int mkdir_p(const char *dir_path) {
 
     size_t path_len = strlen(dir_path) + 1;
     char *tmp = malloc(path_len);
-    if (!tmp){
+    if (!tmp) {
         fprintf(stderr, "Memory allocation error\n");
         return -1;
     }
@@ -168,6 +170,8 @@ void parse_yaml_mapping(yaml_parser_t *parser, FileItem *item) {
 
             if (strcmp(key, "relative_path") == 0) {
                 item->relative_path = strdup((const char *) event.data.scalar.value);
+            } else if (strcmp(key, "waf_base") == 0) {
+                item->waf_base = strdup((const char *) event.data.scalar.value);
             } else if (strcmp(key, "chmod") == 0) {
                 item->chmod = atoi((const char *) event.data.scalar.value);
             } else if (strcmp(key, "action") == 0) {
@@ -257,7 +261,7 @@ int process_yaml_file(const char *filename, char *task) {
             break;
         }
         char waf_path[PATH_MAX] = {0};
-        if (safe_snprintf(waf_path, WAF_BASE, items[i].relative_path) == -1) {
+        if (safe_snprintf(waf_path, items[i].waf_base ? items[i].waf_base : WAF_BASE, items[i].relative_path) == -1) {
             res = -1;
             break;
         }

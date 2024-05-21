@@ -1,17 +1,21 @@
 - name: Check
   shell:
-    cmd: "cd /opt/{{ upgrade_package }}&&./upgrade_by_file_list filelist.yaml check&&cd -"
+    cmd: "cd /opt/{{ package }}&&./upgrade_by_file_list filelist.yaml check&&cd -"
     executable: /bin/sh
   register: check_result
+  when: upgrade_type == 'inc'
   ignore_errors: no
+
+- name: Check and decide to continue
+  fail:
+    msg: "Version does not meet requirements, exiting."
+  when: upgrade_type == 'inc' and check_result.rc != 0
 
 - name: Stop services
   systemd:
     name: "{{ item }}"
     state: stopped
   with_items: "{{ services }}"
-  #register: stop_services_result
-  #until: stop_services_result is succeeded
 
 - name: Find the PID of the process to terminate
   shell:
@@ -34,22 +38,26 @@
   ignore_errors: yes
   with_items: "{{ waf_services }}"
 
-#- name: Wait for waf services to stop
-#  debug:
-#    var: stop_waf_result.stdout_lines
-#  until: stop_waf_result.stdout_lines is defined and stop_waf_result.stdout_lines | length > 0
-#  retries: 2
-#  delay: 5
-#
-#- name: Handle waf services stop failure
-#  fail:
-#    msg: "Failed to stop waf services"
-#  when: stop_waf_result.stdout_lines | length == 0
-- name: Upgrade
+- name: Upgrade incremental
   shell:
-    cmd: "cd /opt/{{ upgrade_package }}&&./upgrade_by_file_list filelist.yaml upgrade&&cd -"
+    cmd: "cd /opt/{{ package }}&&./upgrade_by_file_list filelist.yaml upgrade&&cd -"
     executable: /bin/sh
   register: upgrade_result
+  when: upgrade_type == 'inc'
+  ignore_errors: yes
+
+- name: Upgrade full
+  shell:
+    cmd: "cd /opt/WAF &&./waf-reinstall update node &&cd -"
+    executable: /bin/sh
+  register: upgrade_result
+  when: upgrade_type == 'full'
+  ignore_errors: yes
+
+- name: Custom install
+  shell:
+    cmd: "cd /opt/{{ package }}&&./custom_install.sh&&cd -"
+    executable: /bin/sh
   ignore_errors: yes
 
 - name: Start waf services
@@ -58,22 +66,15 @@
   with_items: "{{ waf_services }}"
   ignore_errors: yes
 
-#- name: Wait for waf services to start
-#  debug:
-#    var: start_waf_result.stdout_lines
-#  until: start_waf_result.stdout_lines is defined and start_waf_result.stdout_lines | length > 0
-#  retries: 2
-#  delay: 10
-#
-#- name: Handle waf services stop failure
-#  fail:
-#    msg: "Failed to stop waf services"
-#  when: start_waf_result.stdout_lines | length == 0
+- name: curl check
+  shell:
+    cmd: 'curl http://127.0.0.1:57980 -H "Host: wafdemo.dbappcloud.com"'
+    executable: /bin/sh
+  ignore_errors: yes
 
 - name: Start services
   systemd:
     name: "{{ item }}"
     state: started
   with_items: "{{ services }}"
-  #register: stop_services_result
-  #until: stop_services_result is succeeded
+

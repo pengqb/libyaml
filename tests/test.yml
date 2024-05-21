@@ -2,8 +2,8 @@
 # 文件名：upgrade_servers.yml
 
 - name: Server Batch Upgrade
-  hosts: tag1
-  serial: 2
+  hosts: all
+  serial: 5
   gather_facts: no
   vars:
     upgrade_sequence:
@@ -12,33 +12,38 @@
     process_name: check.sh
 
   tasks:
-#  - name: Transfer upgrade package
-#    copy:
-#      src: "{{ upgrade_package }}.tar.gz"
-#      dest: /opt/{{ upgrade_package }}.tar.gz
-#      owner: root
-#      group: root
-#      mode: 0755
-#
-#  - name: Unarchive the upgrade package
-#    unarchive:
-#      src: /opt/{{ upgrade_package }}.tar.gz
-#      dest: /opt/
-#      remote_src: yes #远程文件路径
-#      creates: /opt/{{ upgrade_package }} #当指定目录不存在时，ansible才执行解压操作
-  - name: Check
-    shell:
-      cmd: "cd /opt/{{ upgrade_package }}&&./upgrade_by_file_list filelist.yaml check&&cd -"
-      executable: /bin/sh
-    register: pid_result #将命令结果注册为变量pid_result，以便后续步骤使用。
-    ignore_errors: no #检查有错误时，停止升级。
+  - name: Show param of upgrade_type
+    debug:
+      msg: "{{ upgrade_type }}"
 
+  - name: Transfer upgrade package
+    copy:
+      src: "{{ package }}.tgz"
+      dest: /opt/{{ package }}.tgz
+      owner: root
+      group: root
+      mode: 0755
+
+  - name: Unarchive the upgrade package
+    unarchive:
+      src: /opt/{{ package }}.tgz
+      dest: /opt/
+      remote_src: yes #远程文件路径
+      creates: /opt/{{ package }} #当指定目录不存在时，ansible才执行解压操作
+
+#  - name: Check
+#    shell:
+#      cmd: "cd /opt/{{ upgrade_package }}&&./upgrade_by_file_list filelist.yaml check&&cd -"
+#      executable: /bin/sh
+#    register: check_result #将命令结果注册为变量pid_result，以便后续步骤使用。
+#    ignore_errors: no #检查有错误时，停止升级。
+#
 #  - name: Compare version and decide to continue
 #    fail:
 #      msg: "Version does not meet requirements, exiting."
-#    when: version_result.stdout != old_version
+#    when: check_result.rc != 0
 
   # 接下来的tasks只有在版本符合条件时才会执行
   - name: Continue with other tasks
     debug:
-      msg: "{{ pid_result.stdout }}"
+      msg: "{{ upgrade_type }}"

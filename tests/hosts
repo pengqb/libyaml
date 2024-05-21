@@ -16,13 +16,9 @@
 ## 192.168.100.10
 [all:vars]
 old_version=v3.0.11.1.2023103001
-new_version=v2
+new_version=v3.0.11.1.2024033002
 upgrade_package=yaml_data_{{ new_version }}
-
-[tag1]
-10.20.140.81
-10.20.140.82
-10.20.140.102
+package="{{ new_version }}_centos7"
 
 [waf1]
 10.20.140.81

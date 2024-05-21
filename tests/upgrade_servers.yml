@@ -2,7 +2,7 @@
 # 文件名：upgrade_servers.yml
 
 - name: Check project version
-  hosts: tag1
+  hosts: all
   gather_facts: no
 
   tasks:
@@ -18,23 +18,23 @@
       when: version_result.stdout != old_version
 
 - name: Server Batch Upgrade
-  hosts: tag1
-  serial: 2
+  hosts: all
+  serial: 5
   gather_facts: no
-
+  tasks:
   - name: Transfer upgrade package
     copy:
-      src: "{{ upgrade_package }}.tar.gz"
-      dest: /opt/{{ upgrade_package }}.tar.gz
+      src: "{{ package }}.tgz"
+      dest: /opt/{{ package }}.tgz
       owner: root
       group: root
       mode: 0755
   - name: Unarchive the upgrade package
     unarchive:
-      src: /opt/{{ upgrade_package }}.tar.gz
+      src: /opt/{{ package }}.tgz
       dest: /opt/
       remote_src: yes #远程文件路径
-      creates: /opt/{{ upgrade_package }} #当指定目录不存在时，ansible才执行解压操作
+      creates: /opt/{{ package }} #当指定目录不存在时，ansible才执行解压操作
 
 - name: Tasks Execution on waf1
   hosts: waf1
