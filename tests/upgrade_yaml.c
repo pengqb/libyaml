@@ -50,6 +50,7 @@ void parse_yaml_mapping(yaml_parser_t *parser, FileItem *item);
 
 // 函数用来创建多级目录
 int mkdir_p(const char *dir_path) {
+    char *p;
     if (!dir_path) {
         fprintf(stderr, "Invalid directory path\n");
         return -1;
@@ -63,19 +64,19 @@ int mkdir_p(const char *dir_path) {
     }
     snprintf(tmp, path_len, "%s", dir_path);
 
-    for (char *p = tmp + 1; *p; p++) {
+    for (p = tmp + 1; *p; p++) {
         if (*p == '/') {
             *p = 0;
             if (mkdir(tmp, S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH) != 0 && errno != EEXIST) {
                 fprintf(stderr, "Failed to mkdir. strerror:%s\n", strerror(errno));
-                free(tmp);
+                FREE_SAFE(tmp);
                 return -1;
             }
             *p = '/';
         }
     }
 
-    free(tmp);
+    FREE_SAFE(tmp);
     return 0;
 }
 
