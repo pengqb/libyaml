@@ -1,6 +1,6 @@
 - name: Check
   shell:
-    cmd: "cd /opt/{{ package }}&&./upgrade_by_file_list filelist.yaml check&&cd -"
+    cmd: "cd /opt/{{ package }}&&./upgrade_from_file_list filelist.yaml check&&cd -"
     executable: /bin/sh
   register: check_result
   when: upgrade_type == 'inc'
@@ -40,7 +40,7 @@
 
 - name: Upgrade incremental
   shell:
-    cmd: "cd /opt/{{ package }}&&./upgrade_by_file_list filelist.yaml upgrade&&cd -"
+    cmd: "cd /opt/{{ package }}&&./upgrade_from_file_list filelist.yaml upgrade&&cd -"
     executable: /bin/sh
   register: upgrade_result
   when: upgrade_type == 'inc'

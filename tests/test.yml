@@ -33,7 +33,7 @@
 
 #  - name: Check
 #    shell:
-#      cmd: "cd /opt/{{ upgrade_package }}&&./upgrade_by_file_list filelist.yaml check&&cd -"
+#      cmd: "cd /opt/{{ upgrade_package }}&&./upgrade_from_file_list filelist.yaml check&&cd -"
 #      executable: /bin/sh
 #    register: check_result #将命令结果注册为变量pid_result，以便后续步骤使用。
 #    ignore_errors: no #检查有错误时，停止升级。
