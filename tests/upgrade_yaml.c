@@ -63,28 +63,16 @@ int mkdir_p(const char *dir_path) {
     }
     snprintf(tmp, path_len, "%s", dir_path);
 
-    size_t len = strlen(tmp);
-
-    if (tmp[len - 1] == '/') {
-        tmp[len - 1] = 0;
-    }
-
     for (char *p = tmp + 1; *p; p++) {
         if (*p == '/') {
             *p = 0;
             if (mkdir(tmp, S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH) != 0 && errno != EEXIST) {
-                perror("mkdir");
+                fprintf(stderr, "Failed to mkdir. strerror:%s\n", strerror(errno));
                 free(tmp);
                 return -1;
             }
             *p = '/';
         }
-    }
-
-    if (mkdir(tmp, S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH) != 0 && errno != EEXIST) {
-        perror("mkdir");
-        free(tmp);
-        return -1;
     }
 
     free(tmp);
@@ -96,6 +84,7 @@ void bak_file(FileItem *item, const char *waf_path, const char *bak_path) {
     if (item->action & ACTION_DEL) {
         /*先备份，再删除当前文件*/
         if (access(waf_path, F_OK) == 0) {
+            mkdir_p(bak_path);
             if (rename(waf_path, bak_path) != 0) {
                 fprintf(stderr, "Failed to rename file:%s to%s. strerror:%s\n", waf_path, bak_path, strerror(errno));
                 return;

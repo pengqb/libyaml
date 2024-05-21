@@ -11,7 +11,7 @@
   chmod: 0755
   action: modify
 - relative_path: limits.conf
-  waf_base: etc/security/
+  waf_base: /etc/security/
   chmod: 0755
   action: modify
 - relative_path: nginx/sbin/nginx_debug
