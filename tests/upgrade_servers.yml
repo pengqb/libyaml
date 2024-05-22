@@ -24,17 +24,17 @@
   tasks:
   - name: Transfer upgrade package
     copy:
-      src: "{{ package }}.tgz"
-      dest: /opt/{{ package }}.tgz
+      src: "{{ package }}_{{ upgrade_type }}.tgz"
+      dest: /opt/{{ package }}_{{ upgrade_type }}.tgz
       owner: root
       group: root
       mode: 0755
   - name: Unarchive the upgrade package
     unarchive:
-      src: /opt/{{ package }}.tgz
+      src: /opt/{{ package }}_{{ upgrade_type }}.tgz
       dest: /opt/
       remote_src: yes #远程文件路径
-      creates: /opt/{{ package }} #当指定目录不存在时，ansible才执行解压操作
+      creates: /opt/{{ package }}_{{ upgrade_type }} #当指定目录不存在时，ansible才执行解压操作
 
 - name: Tasks Execution on waf1
   hosts: waf1

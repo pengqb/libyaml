@@ -26,7 +26,7 @@
 #define TASK_UPGRADE "upgrade"
 #define TASK_ROLLBACK "rollback"
 
-#define PATH_MAX 256
+#define PATH_MAX 1024
 #define ITEM_MAX 128
 
 #define UPGRADE_BASE "upgrade/"
@@ -56,13 +56,11 @@ int mkdir_p(const char *dir_path) {
         return -1;
     }
 
-    size_t path_len = strlen(dir_path) + 1;
-    char *tmp = malloc(path_len);
+    char *tmp = strdup(dir_path);
     if (!tmp) {
         fprintf(stderr, "Memory allocation error\n");
         return -1;
     }
-    snprintf(tmp, path_len, "%s", dir_path);
 
     for (p = tmp + 1; *p; p++) {
         if (*p == '/') {
