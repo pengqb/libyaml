@@ -6,13 +6,13 @@
   gather_facts: no
 
   tasks:
-    - name: Check project version
+    - name: Get project version
       command: awk 'END{print}' /waf/doc/VERSION
       register: version_result
       changed_when: false
       ignore_errors: true
 
-    - name: Compare version and decide to continue
+    - name: Compare version and decide to continue or not
       fail:
         msg: "Version does not meet requirements, exiting."
       when: version_result.stdout != old_version

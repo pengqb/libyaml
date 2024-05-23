@@ -6,7 +6,7 @@
   when: upgrade_type == 'inc'
   ignore_errors: no
 
-- name: Check and decide to continue
+- name: Check and decide to continue or not
   fail:
     msg: "Version does not meet requirements, exiting."
   when: upgrade_type == 'inc' and check_result.rc != 0
@@ -44,7 +44,6 @@
     executable: /bin/sh
   register: upgrade_result
   when: upgrade_type == 'inc'
-  ignore_errors: yes
 
 - name: Upgrade full
   shell:
@@ -52,25 +51,39 @@
     executable: /bin/sh
   register: upgrade_result
   when: upgrade_type == 'full'
-  ignore_errors: yes
 
 - name: Custom install
   shell:
     cmd: "cd /opt/{{ package }}_{{ upgrade_type }}&&./custom_install.sh&&cd -"
     executable: /bin/sh
+
+- name: Start waf-sync services
+  shell: service waf-sync start
   ignore_errors: yes
+
+- name: Pause for 1 Minute
+  pause:
+    minutes: 1
 
 - name: Start waf services
-  shell: service {{ item }} start
-  register: start_waf_result
-  with_items: "{{ waf_services }}"
+  shell: service waf start
   ignore_errors: yes
 
-- name: curl check
+- name: Pause for 1 Minute
+  pause:
+    minutes: 1
+
+- name: Curl check
   shell:
-    cmd: 'curl http://127.0.0.1:57980 -H "Host: wafdemo.dbappcloud.com"'
+    cmd: 'curl http://127.0.0.1:57980 -H "Host: wafdemo.dbappcloud.com" -I'
     executable: /bin/sh
+    warn: false
+  register: curl_result
   ignore_errors: yes
+
+- name: Curl result
+  debug:
+    msg: "{{ curl_result.stdout }}"
 
 - name: Start services
   systemd:

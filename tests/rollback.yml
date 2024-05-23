@@ -2,7 +2,7 @@
 # 文件名：upgrade_servers.yml
 
 - name: Server Batch Upgrade
-  hosts: waf2
+  hosts: rollback_servers
   gather_facts: no
   vars:
     services:
@@ -39,21 +39,13 @@
       ignore_errors: yes
       with_items: "{{ waf_services }}"
 
-    - name: Start waf-sync services
-      shell: nohup service waf-sync start
-      ignore_errors: yes
-
-    - name: Pause for 1 Minute
-      pause:
-        minutes: 1
-
     - name: Start waf services
-      shell: service waf start
+      shell: service {{ item }} start
+      register: start_waf_result
+      async: 300
+      poll: 20
+      with_items: "{{ waf_services }}"
       ignore_errors: yes
-
-    - name: Pause for 1 Minute
-      pause:
-        minutes: 1
 
     - name: Curl check
       shell:

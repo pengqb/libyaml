@@ -17,8 +17,9 @@
 [all:vars]
 old_version=v3.0.11.1.2023103001
 new_version=v3.0.11.1.2024033002
-upgrade_package=yaml_data_{{ new_version }}
 package="{{ new_version }}_centos7"
+[rollback_servers]
+10.20.140.102
 
 [waf1]
 10.20.140.81
