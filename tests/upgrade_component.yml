@@ -81,9 +81,14 @@
   register: curl_result
   ignore_errors: yes
 
+- name: Check and decide to continue or not
+    fail:
+      msg: "service waf start fail, exiting."
+    when: curl_result.stdout_lines[0] != 'HTTP/1.1 200 OK'
+
 - name: Curl result
   debug:
-    msg: "{{ curl_result.stdout }}"
+    msg: "{{ curl_result.stdout_lines[0] }}"
 
 - name: Start services
   systemd:
