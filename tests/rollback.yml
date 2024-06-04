@@ -39,6 +39,17 @@
       ignore_errors: yes
       with_items: "{{ waf_services }}"
 
+    - name: Roll back
+      shell:
+        cmd: "cd /opt/{{ package }}_inc&&./upgrade_from_file_list filelist.yaml rollback&&cd -"
+        executable: /bin/sh
+      register: upgrade_result
+
+    - name: Custom roll back
+      shell:
+        cmd: "cd /opt/{{ package }}_inc&&./custom_rollback.sh&&cd -"
+        executable: /bin/sh
+
     - name: Start waf services
       shell: service {{ item }} start
       register: start_waf_result
